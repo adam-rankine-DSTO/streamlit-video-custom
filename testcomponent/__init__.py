@@ -19,10 +19,12 @@ def on_current_timestamp_change():
 #
 # The wrapper allows us to customize our component's API: we can pre-process its
 # input args, post-process its output value, and add a docstring for users.
-def testcomponent(seek_to, src, key=None):
+def testcomponent(src, seek_to, detections, fps, key=None):
     component_value = out(
         seek_to=seek_to,
         src=src,
+        detections=detections,
+        fps=fps,
         key=key,
         default={"current_timestamp": 0},
         data={"seek_to": seek_to, "src": src},

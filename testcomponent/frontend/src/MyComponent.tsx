@@ -14,6 +14,7 @@ export type MyComponentStateShape = {
 
 export type MyComponentDataShape = {
   seek_to?: number;
+  detections: any;
   src: string;
 };
 
@@ -33,6 +34,7 @@ export type MyComponentProps = Pick<
  */
 const MyComponent: FC<MyComponentProps> = ({
   seek_to,
+  detections,
   src,
   setStateValue,
 }): ReactElement => {
@@ -70,7 +72,8 @@ const MyComponent: FC<MyComponentProps> = ({
         controls
         onTimeUpdate={handleTimeUpdate}
         style={{ width: "100%", maxWidth: "100%" }}
-      />
+      >
+      </video>
     </div>
   );
 };

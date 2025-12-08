@@ -2,10 +2,15 @@
 
 Testing component for custom streamlit components
 
+**NOTE:** this requires the package "ffmpeg" to load datasets from fiftyone - for installation on ubuntu systems run `sudo apt install ffmpeg`
+
 ## Installation instructions
 
 ```sh
 uv pip install testcomponent
+
+# install ffmpeg
+sudo apt install ffmpeg
 ```
 
 ### Development install (editable)
