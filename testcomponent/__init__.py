@@ -8,7 +8,11 @@ out = st.components.v2.component(
 
 
 def on_current_timestamp_change():
-    """Callback function for when the number of clicks changes in the frontend."""
+    """Callback function for when current timestamp changes in the frontend."""
+    pass
+
+def on_current_frame_change():
+    """Callback function for when the current frame changes in the frontend."""
     pass
 
 
@@ -26,9 +30,10 @@ def testcomponent(src, seek_to, detections, fps, key=None):
         detections=detections,
         fps=fps,
         key=key,
-        default={"current_timestamp": 0},
-        data={"seek_to": seek_to, "src": src},
+        default={"current_timestamp": 0, "current_frame": 0},
+        data={"seek_to": seek_to, "src": src, "detections": detections, "fps": fps},
         on_current_timestamp_change=on_current_timestamp_change,
+        on_current_frame_change=on_current_frame_change
     )
 
     # We could modify the value returned from the component if we wanted.

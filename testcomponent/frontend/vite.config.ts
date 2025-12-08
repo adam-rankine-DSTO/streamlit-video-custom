@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react";
 import process from "node:process";
-import { defineConfig, loadEnv, UserConfig } from "vite";
+import { defineConfig, UserConfig } from "vite";
 
 /**
  * Vite configuration for Streamlit Custom Component v2 development using React.

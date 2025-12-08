@@ -35,9 +35,15 @@ def render_video_with_detections(src, detections, seek_to=None, fps=30, key=None
     video_base64 = base64.b64encode(video_bytes).decode()
     video_url = f"data:video/mp4;base64,{video_base64}"
 
-    component_ouput = video_bbox_video(
-        video_url=video_url
+    component_ouput = testcomponent(
+        src=video_url,
+        detections=detections,
+        seek_to=seek_to,
+        fps=fps,
+        key=key
     )
+
+    return component_ouput
 
 
 def main():
@@ -122,12 +128,14 @@ def main():
 
         st.session_state.seek_ts = st.text_input("Seek to: ", value=st.session_state.seek_ts)
 
-        render_video_with_detections(
+        result = render_video_with_detections(
             src=sample.filepath,
             detections=detections,
             seek_to=st.session_state.seek_ts,
             fps=fps,
         )
+
+        st.write(result)
 
 
 # result = testcomponent(
