@@ -1,5 +1,4 @@
 import { ComponentArgs } from "@streamlit/component-v2-lib";
-import "./styles.css";
 import {
   FC,
   ReactElement,
@@ -31,11 +30,17 @@ export type MyComponentStateShape = {
   current_frame: number;
 };
 
+interface SelectedSegment {
+  start: number;
+  end: number;
+}
+
 export type MyComponentDataShape = {
   seek_to?: number;
   detections: Record<number, Array<Detection>>;
   fps: number;
   src: string;
+  selected_segments: Array<SelectedSegment>;
 };
 
 export type MyComponentProps = Pick<
@@ -59,6 +64,7 @@ const MyComponent: FC<MyComponentProps> = ({
   detections,
   fps,
   src,
+  selected_segments,
   setStateValue,
 }): ReactElement => {
   // Video element reference
@@ -68,6 +74,7 @@ const MyComponent: FC<MyComponentProps> = ({
 
   // Frontend component state
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [totalFrames, setTotalFrames] = useState(0);
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
@@ -77,25 +84,6 @@ const MyComponent: FC<MyComponentProps> = ({
       videoRef.current.currentTime = seek_to;
     }
   }, [seek_to]);
-  
-  // useEffect(() => {
-  //   const video = videoRef.current;
-  //
-  //   if (!video) { return; }
-  //
-  //   const handleLoadedMetadata = () => {
-  //     if (!video.duration && !isNaN(video.duration)) {
-  //     }
-  //   }
-  //
-  //   video.addEventListener("loadedmetadata", handleLoadedMetadata);
-  //
-  //   return () => {
-  //     if (video) {
-  //       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-  //     }
-  //   };
-  // }, [src, fps, videoRef]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -159,6 +147,7 @@ const MyComponent: FC<MyComponentProps> = ({
     if (!video || !canvas) { return; }
 
     setTotalFrames(Math.floor(video.duration * fps));
+    setDuration(video.duration)
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
   }
@@ -191,9 +180,9 @@ const MyComponent: FC<MyComponentProps> = ({
     }));
   };
 
-  const getClassDistribution = () => {
+  const getClassDistribution = (): Array<[string, number]> => {
     const currentDetections = detections[currentFrame] || [];
-    const distribution = {};
+    const distribution: { [key: string]: number } = {};
 
     currentDetections.forEach((detection) => {
       distribution[detection.label] = (distribution[detection.label] || 0) + 1;
@@ -242,10 +231,20 @@ const MyComponent: FC<MyComponentProps> = ({
     video.currentTime = targetTime;
   }
 
+  const handleSegmentClick = (index: number) => {
+    const video = videoRef.current;
+
+    if (!video || !fps) { return; }
+
+    const targetTime = selected_segments[index].start;
+    video.currentTime = targetTime;
+  }
+
   return (
     <div style={{
       display: "flex",
       flexDirection: "column",
+      gap: "20px",
       alignItems: "center",
       width: "100%",
       maxWidth: "1200px",
@@ -374,7 +373,8 @@ const MyComponent: FC<MyComponentProps> = ({
                   width: "3px", 
                   height: "100%", 
                   backgroundColor: "#3b82f6", 
-                  boxShadow: "0 0 8px rgba(59, 130, 246, 0.8)" 
+                  boxShadow: "0 0 8px rgba(59, 130, 246, 0.8)", 
+                  borderRadius: "6px"
                 }}
               />
             </div>
@@ -393,11 +393,285 @@ const MyComponent: FC<MyComponentProps> = ({
                 <span>High</span>
               </div>
             </div>
+
+            {selected_segments.length !== 0 && (
+              <div style={{ 
+                position: "relative",
+                height: "20px",
+                background: "#e0e0e0",
+                display: "flex", 
+                flexDirection: "row", 
+                border: "black", 
+                borderRadius: "2px",
+                width: "100%"
+              }}>
+                {duration && selected_segments.map((segment, i) => {
+                  const segStart = (segment.start / duration) * 100;
+                  const segWidth = ((segment.end - segment.start) / duration) * 100;
+
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        position: "absolute",
+                        left: `${segStart}%`,
+                        width: `${segWidth}%`,
+                        height: "100%",
+                        background: "#4caf50",
+                        borderRadius: "2px"
+                      }}
+                      onClick={() => handleSegmentClick(i)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+
           </div>
         </div>
       </div>
-      {/* TODO: current frame stats */}
+
+      <div style={{ width: "100%" }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px"
+        }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0" }}>Current Frame Data</h3>
+        </div>
+
+        <div style={{
+          display: "grid",
+          placeItems: "center",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "16px",
+          marginBottom: "20px"
+        }}>
+          <div style={{
+            borderRadius: "10px",
+            padding: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}>
+            <div style={{ fontSize: "28px" }}>⿻</div>
+            <div style={{ flex: "1" }}>
+              <div style={{
+                color: "#9ca3af",
+                fontSize: "12px",
+                marginBottom: "4px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Frame
+              </div>
+              <div style={{
+                color: "#fff",
+                fontSize: "24px",
+                fontWeight: "bold"
+              }}>
+                {currentFrame}
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            borderRadius: "10px",
+            padding: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}>
+            <div style={{ fontSize: "28px" }}>📦</div>
+            <div style={{ flex: "1" }}>
+              <div style={{
+                color: "#9ca3af",
+                fontSize: "12px",
+                marginBottom: "4px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Detections
+              </div>
+              <div style={{
+                color: "#fff",
+                fontSize: "24px",
+                fontWeight: "bold"
+              }}>
+                {currentDetections.length}
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            borderRadius: "10px",
+            padding: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}>
+            <div style={{ fontSize: "28px" }}>🏷️</div>
+            <div style={{ flex: "1" }}>
+              <div style={{
+                color: "#9ca3af",
+                fontSize: "12px",
+                marginBottom: "4px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Classes
+              </div>
+              <div style={{
+                color: "#fff",
+                fontSize: "24px",
+                fontWeight: "bold"
+              }}>
+                {classDistribution.length}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       {/* TODO: class distribution across frames */}
+
+      {classDistribution.length !== 0 && (
+        <div style={{ width: "100%"}}>
+          <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0", marginBottom: "20px" }}>Object Classes</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {classDistribution.map(([label, count]) => (
+              <div 
+                key={label} 
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "150px 1fr 40px",
+                  alignItems: "center",
+                  gap: "12px"
+                }}
+              >
+                <div 
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    color: "#d1d5db",
+                    fontSize: "13px"
+                  }}
+                >
+                  <div
+                    style={{ 
+                      backgroundColor: getColorForLabel(label),
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      flexShrink: 0
+                    }}
+                  />
+                  <span>{label}</span>
+                </div>
+                <div 
+                  style={{
+                    height: "8px",
+                    backgroundColor: "#374151",
+                    borderRadius: "4px",
+                    overflow: "hidden"
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${(count / currentDetections.length) * 100}%`,
+                      backgroundColor: getColorForLabel(label),
+                      height: "100%",
+                      borderRadius: "4px",
+                      transition: "width 0.3 ease"
+                    }}
+                  />
+                </div>
+                <div 
+                  style={{
+                    color: "#9ca3af",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    textAlign: "right"
+                  }}
+                >
+                  {count}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {currentDetections.length > 0 && (
+        <div style={{ width: "100%" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0", marginBottom: "20px" }}>
+            Detection Details
+          </h3>
+
+          <div 
+            style={{
+              display: "flex", 
+              flexDirection: "column",
+              gap: "8px",
+              maxHeight: "300px",
+              overflowY: "auto",
+            }}
+          >
+            {currentDetections.map((det, i) => (
+              <div 
+                key={i} 
+                className="detection-item"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <div 
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <div
+                    className="color-dot"
+                    style={{ 
+                      backgroundColor: getColorForLabel(det.label),
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      flexShrink: 0
+                    }}
+                  />
+                  <span style={{ color: "#fff", fontWeight: "500", fontSize: "14px" }}>{det.label}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span 
+                    style={{
+                      color: "#4caf50",
+                      fontSize: "13px",
+                      fontFamily: "monospace",
+                      fontWeight: "600"
+                    }}
+                  >
+                    {(det.confidence * 100).toFixed(1)}%
+                  </span>
+                  <span 
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "11px",
+                      fontFamily: "monospace"
+                    }}
+                  >
+                    [{(det.x * 100).toFixed(0)}, {(det.y * 100).toFixed(0)}]
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

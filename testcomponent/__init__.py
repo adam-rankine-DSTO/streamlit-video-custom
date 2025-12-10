@@ -23,19 +23,13 @@ def on_current_frame_change():
 #
 # The wrapper allows us to customize our component's API: we can pre-process its
 # input args, post-process its output value, and add a docstring for users.
-def testcomponent(src, seek_to, detections, fps, key=None):
+def testcomponent(src, seek_to, detections, fps, selected_segments=[], key=None):
     component_value = out(
-        seek_to=seek_to,
-        src=src,
-        detections=detections,
-        fps=fps,
         key=key,
         default={"current_timestamp": 0, "current_frame": 0},
-        data={"seek_to": seek_to, "src": src, "detections": detections, "fps": fps},
+        data={"seek_to": seek_to, "src": src, "detections": detections, "fps": fps, "selected_segments": selected_segments},
         on_current_timestamp_change=on_current_timestamp_change,
         on_current_frame_change=on_current_frame_change
     )
 
-    # We could modify the value returned from the component if we wanted.
-    # There's no need to do this in our simple example - but it's an option.
     return component_value

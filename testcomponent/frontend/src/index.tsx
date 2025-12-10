@@ -36,13 +36,14 @@ const MyComponentRoot: Component<
   }
 
   // Here we are accessing the data passed from Streamlit on the Python side.
-  const { src, seek_to, detections, fps} = data;
+  const { src, seek_to, detections, fps, selected_segments} = data;
 
   // Render/re-render the React application into the root using the React DOM
   // API.
   reactRoot.render(
     <StrictMode>
       <MyComponent 
+        selected_segments={selected_segments}
         setStateValue={setStateValue} 
         src={src} 
         seek_to={seek_to} 
