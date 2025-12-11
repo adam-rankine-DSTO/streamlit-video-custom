@@ -1,7 +1,10 @@
 import streamlit as st
-import fiftyone as fo
+import os
+# import fiftyone as fo
+import fiftyone.zoo as foz
+from fiftyone.types import COCODetectionDataset, FiftyOneVideoLabelsDataset
 import base64
-from convert_coco import coco_to_video
+from convert_coco import convert_coco
 from testcomponent import testcomponent
 
 
@@ -50,18 +53,43 @@ def render_video_with_detections(src, detections, seek_to=None, fps=30, selected
 
 
 def main():
-    with st.spinner():
-        try:
-            dataset = fo.load_dataset(FIFTYONE_DATASET_NAME)
-            st.toast(f"Loaded existing dataset: {dataset.name}", icon="✅")
-        except:
-            st.toast(f"Downloading dataset from FiftyOne Zoo...")
-            import fiftyone.zoo as foz
-            dataset = foz.load_zoo_dataset(FIFTYONE_DATASET_NAME)
-            st.toast(f"Loaded existing dataset: {dataset.name}", icon="✅")
-
     if "seek_ts" not in st.session_state:
         st.session_state.seek_ts = 0
+
+    with st.spinner("Loading dataset..."):
+        # try:
+        #     dataset = fo.load_dataset(FIFTYONE_DATASET_NAME)
+        #     st.toast(f"Loaded existing dataset: {dataset.name}", icon="✅")
+        # except:
+        #     st.toast(f"Downloading dataset from FiftyOne Zoo...")
+        #     import fiftyone.zoo as foz
+        #     dataset = foz.load_zoo_dataset(FIFTYONE_DATASET_NAME)
+        #     st.toast(f"Loaded existing dataset: {dataset.name}", icon="✅")
+
+        # Import Dataset from fiftyone.zoo
+        output_dataset_name="coco_video"
+
+        quickstart = foz.load_zoo_dataset("quickstart")
+
+        coco_export_dir = "quickstart_coco_export"
+        os.makedirs(coco_export_dir, exist_ok=True)
+
+        # Export fiftyone.zoo dataset and export as COCODetectionDataset
+        quickstart.export(
+            export_dir=coco_export_dir,
+            dataset_type=COCODetectionDataset,
+            label_field="ground_truth"
+        )
+
+        # Convert COCODetectionDataset to FiftyOneVideoLabelsDataset
+        dataset = convert_coco(
+            coco_dataset_dir=coco_export_dir,
+            output_dataset_name=output_dataset_name,
+            fps=5
+        )
+
+        st.toast(f"Loaded existing dataset: {dataset.name}", icon="✅")
+
 
     st.header("Bounding Box Video Component")
 
