@@ -78,6 +78,7 @@ const MyComponent: FC<MyComponentProps> = ({
   const [currentFrame, setCurrentFrame] = useState(0);
   const [totalFrames, setTotalFrames] = useState(0);
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
+  const [hoveredHighlightedSegment, setHoveredHighlightedSegment] = useState<number | null>(null);
 
   useEffect(() => {
     if (seek_to && videoRef.current) {
@@ -259,7 +260,6 @@ const MyComponent: FC<MyComponentProps> = ({
           onLoadedMetadata={handleLoadedMetadata}
           style={{ width: "100%", height: "100%", objectFit: "contain"}}
         />
-        {/* conditionally render canvas with props and processing (probably wont need it) */}
         <canvas
           ref={canvasRef}
           style={{
@@ -293,19 +293,18 @@ const MyComponent: FC<MyComponentProps> = ({
 
       <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
         <div style={{ gap: "20px"}}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: "12px"}}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0" }}>Detection Timeline</h3>
             <span style={{ color: "#9ca3af", fontSize: "13px" }}>
               Activity across video duration
             </span>
           </div>
 
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "1px" }}>
             <div style={{ display: "flex", alignItems: "flex-end", height: "60px", gap: "1px", position: "relative"}}>
               {detectionDensity.map((density, i: number) => (
                 <div
                   key={i}
-                  className="timeline-bar"
                   onMouseEnter={() => setHoveredSegment(i)}
                   onMouseLeave={() => setHoveredSegment(null)}
                   onClick={() => handleTimelineClick(density)}
@@ -320,10 +319,7 @@ const MyComponent: FC<MyComponentProps> = ({
                     transform: hoveredSegment === i ? "scale(1.1)" : "",
                     cursor: hoveredSegment === i ? "pointer" : ""
                   }}
-                  title={`
-                  `}
                 >
-                  {/* Segment hover tooltip */}
                   {hoveredSegment === i && (
                     <div 
                       style={{
@@ -347,8 +343,8 @@ const MyComponent: FC<MyComponentProps> = ({
                     >
                       <span>Segment: {`${i + 1}`}</span>
                       <span>Detections: {`${density.count}`}</span>
-                      <span>Start Time: {`${formatTime(density.startFrame / fps)}`}</span>
-                      <span>End Frame: {`${formatTime(density.endFrame / fps)}`}</span>
+                      <span>Start time: {`${formatTime(density.startFrame / fps)}`}</span>
+                      <span>End time: {`${formatTime(density.endFrame / fps)}`}</span>
                     </div>
                   )}
                 </div>
@@ -379,26 +375,10 @@ const MyComponent: FC<MyComponentProps> = ({
               />
             </div>
 
-            <div style={{ display: "flex", gap: "16px", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
-                <div style={{ backgroundColor: "#10b981", width: "12px", height: "12px", borderRadius: "2px" }} />
-                <span>Low</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
-                <div style={{ backgroundColor: "#f59e0b", width: "12px", height: "12px", borderRadius: "2px" }} />
-                <span>Medium</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
-                <div style={{ backgroundColor: "#ef4444", width: "12px", height: "12px", borderRadius: "2px" }} />
-                <span>High</span>
-              </div>
-            </div>
-
             {selected_segments.length !== 0 && (
               <div style={{ 
                 position: "relative",
-                height: "20px",
-                background: "#e0e0e0",
+                height: "5px",
                 display: "flex", 
                 flexDirection: "row", 
                 border: "black", 
@@ -417,15 +397,67 @@ const MyComponent: FC<MyComponentProps> = ({
                         left: `${segStart}%`,
                         width: `${segWidth}%`,
                         height: "100%",
-                        background: "#4caf50",
-                        borderRadius: "2px"
+                        background: "#800080",
+                        borderRadius: "2px",
+                        opacity: hoveredHighlightedSegment === i ? "0.8" : "1",
+                        transform: hoveredHighlightedSegment === i ? "scale(1.1)" : "",
+                        transition: "all 0.2s ease",
+                        cursor: hoveredHighlightedSegment === i ? "pointer" : ""
                       }}
+                      onMouseEnter={() => setHoveredHighlightedSegment(i)}
+                      onMouseLeave={() => setHoveredHighlightedSegment(null)}
                       onClick={() => handleSegmentClick(i)}
-                    />
+                    >
+                    {hoveredHighlightedSegment === i && (
+                      <div 
+                        style={{
+                          position: "absolute",
+                          display: "flex",
+                          flexDirection: "column",
+                          bottom: "100%",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          marginBottom: "8px",
+                          backgroundColor: "rgba(0, 0, 0, 0.9)",
+                          color: "#fff",
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          whiteSpace: "nowrap",
+                          zIndex: "1000",
+                          pointerEvents: "none",
+                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+                        }}
+                      >
+                        <span>Clip: {`${i + 1}`}</span>
+                        <span>Start timestamp: {`${formatTime(segment.start)}`}</span>
+                        <span>End timestamp: {`${formatTime(segment.end)}`}</span>
+                      </div>
+                    )}
+                    </div>
                   );
                 })}
               </div>
             )}
+
+            <div style={{ display: "flex", gap: "16px", alignItems: "center", justifyContent: "center", marginTop: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
+                <div style={{ backgroundColor: "#10b981", width: "12px", height: "12px", borderRadius: "2px" }} />
+                <span>Low</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
+                <div style={{ backgroundColor: "#f59e0b", width: "12px", height: "12px", borderRadius: "2px" }} />
+                <span>Medium</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
+                <div style={{ backgroundColor: "#ef4444", width: "12px", height: "12px", borderRadius: "2px" }} />
+                <span>High</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9ca3af"}}>
+                <div style={{ backgroundColor: "#800080", width: "12px", height: "12px", borderRadius: "2px" }} />
+                <span>Selected Clips</span>
+              </div>
+            </div>
 
           </div>
         </div>
@@ -438,7 +470,12 @@ const MyComponent: FC<MyComponentProps> = ({
           justifyContent: "space-between",
           marginBottom: "12px"
         }}>
-          <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0" }}>Current Frame Data</h3>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: "12px"}}>
+            <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0" }}>Current Frame Data</h3>
+            <span style={{ color: "#9ca3af", fontSize: "13px" }}>
+              Amount of objects in the current frame
+            </span>
+          </div>
         </div>
 
         <div style={{
@@ -535,11 +572,22 @@ const MyComponent: FC<MyComponentProps> = ({
         </div>
       </div>
 
-      {/* TODO: class distribution across frames */}
-
       {classDistribution.length !== 0 && (
         <div style={{ width: "100%"}}>
-          <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0", marginBottom: "20px" }}>Object Classes</h3>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: "12px"}}>
+            <h3 
+              style={{ 
+                fontSize: "18px", 
+                fontWeight: "600", 
+                margin: "0", 
+                marginBottom: "20px" 
+              }}>
+                Object Classes
+            </h3>
+            <span style={{ color: "#9ca3af", fontSize: "13px" }}>
+              What you are seeing in the current frame
+            </span>
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {classDistribution.map(([label, count]) => (
               <div 
@@ -607,9 +655,14 @@ const MyComponent: FC<MyComponentProps> = ({
 
       {currentDetections.length > 0 && (
         <div style={{ width: "100%" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0", marginBottom: "20px" }}>
-            Detection Details
-          </h3>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: "12px"}}>
+            <h3 style={{ fontSize: "18px", fontWeight: "600", margin: "0", marginBottom: "20px" }}>
+              Detection Details
+            </h3>
+            <span style={{ color: "#9ca3af", fontSize: "13px" }}>
+              All of the detections in the current frame
+            </span>
+          </div>
 
           <div 
             style={{
